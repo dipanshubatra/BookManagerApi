@@ -33,5 +33,16 @@ public class BookmarkController {
     }
     return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteBookmark(@PathVariable Long id){
+
+        boolean deleted = bookmarkService.deleteBookmarkById(id);
+
+        if(deleted){
+            return new ResponseEntity<>("Deleted", HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
 
 }

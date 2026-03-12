@@ -25,4 +25,16 @@ public class BookmarkService {
         Optional<Bookmark> bookmark = bookmarkRepository.findById(id);
         return bookmark;
     }
+
+    public boolean deleteBookmarkById(Long id) {
+
+        Optional<Bookmark> bookmark = bookmarkRepository.findById(id);
+
+        if (bookmark.isPresent()) {
+            bookmarkRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
 }
+
