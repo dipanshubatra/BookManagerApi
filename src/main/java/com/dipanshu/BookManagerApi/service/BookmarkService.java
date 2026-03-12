@@ -36,5 +36,25 @@ public class BookmarkService {
         }
         return false;
     }
+
+    public Optional<Bookmark> updateBookmark(Long id, Bookmark updatedBookmark) {
+
+        Optional<Bookmark> existingBookmark = bookmarkRepository.findById(id);
+
+        if(existingBookmark.isPresent()){
+
+            Bookmark bookmark = existingBookmark.get();
+
+            bookmark.setTitle(updatedBookmark.getTitle());
+            bookmark.setUrl(updatedBookmark.getUrl());
+            bookmark.setDescription(updatedBookmark.getDescription());
+
+            Bookmark savedBookmark = bookmarkRepository.save(bookmark);
+
+            return Optional.of(savedBookmark);
+        }
+
+        return Optional.empty();
+    }
 }
 

@@ -44,5 +44,30 @@ public class BookmarkController {
 
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<Bookmark> updateBookmark(
+            @PathVariable Long id,
+            @RequestBody Bookmark bookmark){
 
+        Optional<Bookmark> updatedBookmark = bookmarkService.updateBookmark(id, bookmark);
+
+        if(updatedBookmark.isPresent()){
+            return new ResponseEntity<>(updatedBookmark.get(), HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
