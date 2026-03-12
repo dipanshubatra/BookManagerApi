@@ -5,6 +5,7 @@ import com.dipanshu.BookManagerApi.repository.BookmarkRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BookmarkService {
@@ -19,4 +20,9 @@ public class BookmarkService {
         return bookmarkRepository.findAll();
     }
 
+
+    public Optional<Bookmark> findBookmarkById(Long id) {
+        Optional<Bookmark> bookmark = bookmarkRepository.findById(id);
+        return bookmark;
+    }
 }
