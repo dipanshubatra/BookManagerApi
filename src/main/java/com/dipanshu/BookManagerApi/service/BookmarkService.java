@@ -18,5 +18,5 @@ public class BookmarkService {
     public List<Bookmark> findAllBookmarks(){
         return bookmarkRepository.findAll();
     }
-    
+
 }
