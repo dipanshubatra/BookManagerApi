@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import java.util.Set;
+
 @Entity
 @Table(name = "bookmarks")
 @Data
@@ -23,7 +25,13 @@ public class Bookmark {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    @ManyToMany
+    @JoinTable(
+            name = "bookmark_tags",
+            joinColumns = @JoinColumn(name = "bookmark_id"),
+            inverseJoinColumns =   @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags;
     @PrePersist
     public void beforeSave() {
         createdAt = LocalDateTime.now();
