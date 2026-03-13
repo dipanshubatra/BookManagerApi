@@ -4,8 +4,8 @@ import com.dipanshu.BookManagerApi.entity.Bookmark;
 import com.dipanshu.BookManagerApi.entity.Tag;
 import com.dipanshu.BookManagerApi.repository.BookmarkRepository;
 import com.dipanshu.BookManagerApi.repository.TagRepository;
-import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -17,79 +17,78 @@ public class BookmarkService {
     private final BookmarkRepository bookmarkRepository;
     private final TagRepository tagRepository;
 
-
     public BookmarkService(BookmarkRepository bookmarkRepository, TagRepository tagRepository){
-        this.bookmarkRepository= bookmarkRepository;
+        this.bookmarkRepository = bookmarkRepository;
         this.tagRepository = tagRepository;
     }
-    public Bookmark createBookmark(Bookmark bookmark){
-        List<String> tagNames = bookmark.getTags().stream().map(Tag::getName).toList();
-        Set<Tag> resolvedTags = resolveTags(tagNames);
-        bookmark.setTags(resolvedTags);
 
+    @Transactional
+    public Bookmark createBookmark(Bookmark bookmark){
+        if(bookmark.getTags() != null && !bookmark.getTags().isEmpty()){
+            List<String> tagNames = bookmark.getTags().stream().map(Tag::getName).toList();
+            Set<Tag> resolvedTags = resolveTags(tagNames);
+            bookmark.setTags(resolvedTags);
+        }
         return bookmarkRepository.save(bookmark);
     }
+
+    @Transactional(readOnly = true)
     public List<Bookmark> findAllBookmarks(){
         return bookmarkRepository.findAll();
     }
 
-
+    @Transactional(readOnly = true)
     public Optional<Bookmark> findBookmarkById(Long id) {
-        Optional<Bookmark> bookmark = bookmarkRepository.findById(id);
-        return bookmark;
+        return bookmarkRepository.findById(id);
     }
+
+    @Transactional(readOnly = true)
     public List<Bookmark> findBookmarksByTag(String tagName) {
-        List<Bookmark> bookmarks = bookmarkRepository.findByTagsName(tagName);
-
-        bookmarks.forEach(bookmark -> Hibernate.initialize(bookmark.getTags()));
-
-        return bookmarks;
+        return bookmarkRepository.findByTagsName(tagName);
     }
+
+    @Transactional
     public boolean deleteBookmarkById(Long id) {
-
-        Optional<Bookmark> bookmark = bookmarkRepository.findById(id);
-
-        if (bookmark.isPresent()) {
+        if(bookmarkRepository.existsById(id)){
             bookmarkRepository.deleteById(id);
             return true;
         }
         return false;
     }
 
+    @Transactional
     public Optional<Bookmark> updateBookmark(Long id, Bookmark updatedBookmark) {
-
         Optional<Bookmark> existingBookmark = bookmarkRepository.findById(id);
 
         if(existingBookmark.isPresent()){
-
             Bookmark bookmark = existingBookmark.get();
 
             bookmark.setTitle(updatedBookmark.getTitle());
             bookmark.setUrl(updatedBookmark.getUrl());
             bookmark.setDescription(updatedBookmark.getDescription());
 
-            Bookmark savedBookmark = bookmarkRepository.save(bookmark);
+            if(updatedBookmark.getTags() != null && !updatedBookmark.getTags().isEmpty()){
+                List<String> tagNames = updatedBookmark.getTags().stream().map(Tag::getName).toList();
+                bookmark.setTags(resolveTags(tagNames));
+            }
 
-            return Optional.of(savedBookmark);
+            return Optional.of(bookmarkRepository.save(bookmark));
         }
 
         return Optional.empty();
     }
+
     private Set<Tag> resolveTags(List<String> tagNames){
-        Set<Tag>tags = new HashSet<>();
-        for(String tagName :tagNames){
-            Optional<Tag> existingTag = tagRepository.findByName(tagName);
-            if(existingTag.isPresent()){
-                tags.add(existingTag.get());
-            }
-            else{
-                Tag newTag = new Tag();
-                newTag.setName(tagName);
-                Tag savedTag = tagRepository.save(newTag);
-                tags.add(savedTag);
-            }
+        Set<Tag> tags = new HashSet<>();
+        for(String tagName : tagNames){
+            Tag tag = tagRepository.findByName(tagName)
+                    .orElseGet(() -> {
+                        Tag newTag = new Tag();
+                        newTag.setName(tagName);
+                        return tagRepository.save(newTag);
+                    });
+            tags.add(tag);
         }
         return tags;
     }
 }
-
