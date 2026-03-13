@@ -4,6 +4,10 @@ import com.dipanshu.BookManagerApi.entity.Bookmark;
 import com.dipanshu.BookManagerApi.entity.Tag;
 import com.dipanshu.BookManagerApi.repository.BookmarkRepository;
 import com.dipanshu.BookManagerApi.repository.TagRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,6 +80,23 @@ public class BookmarkService {
         }
 
         return Optional.empty();
+    }
+    @Transactional(readOnly = true)
+    public Page<Bookmark> findAllBookmarksPaginated(int page, int size, String sortBy, String direction) {
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return bookmarkRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Bookmark> searchBookmarks(String query, int page, int size, String sortBy, String direction) {
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return bookmarkRepository.searchBookmarks(query, pageable);
     }
 
     private Set<Tag> resolveTags(List<String> tagNames){
