@@ -4,6 +4,7 @@ import com.dipanshu.BookManagerApi.entity.Bookmark;
 import com.dipanshu.BookManagerApi.entity.Tag;
 import com.dipanshu.BookManagerApi.repository.BookmarkRepository;
 import com.dipanshu.BookManagerApi.repository.TagRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -25,7 +26,7 @@ public class BookmarkService {
         List<String> tagNames = bookmark.getTags().stream().map(Tag::getName).toList();
         Set<Tag> resolvedTags = resolveTags(tagNames);
         bookmark.setTags(resolvedTags);
-        
+
         return bookmarkRepository.save(bookmark);
     }
     public List<Bookmark> findAllBookmarks(){
@@ -37,7 +38,13 @@ public class BookmarkService {
         Optional<Bookmark> bookmark = bookmarkRepository.findById(id);
         return bookmark;
     }
+    public List<Bookmark> findBookmarksByTag(String tagName) {
+        List<Bookmark> bookmarks = bookmarkRepository.findByTagsName(tagName);
 
+        bookmarks.forEach(bookmark -> Hibernate.initialize(bookmark.getTags()));
+
+        return bookmarks;
+    }
     public boolean deleteBookmarkById(Long id) {
 
         Optional<Bookmark> bookmark = bookmarkRepository.findById(id);

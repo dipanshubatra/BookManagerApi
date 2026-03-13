@@ -14,17 +14,25 @@ import java.util.Optional;
 @RequestMapping("/bookmarks")
 public class BookmarkController {
     private final BookmarkService bookmarkService;
+
+
     public BookmarkController(BookmarkService bookmarkService){
         this.bookmarkService = bookmarkService;
     }
+
+
     @PostMapping
     public Bookmark createBookmark(@RequestBody Bookmark bookmark){
         return bookmarkService.createBookmark(bookmark);
     }
+
+
     @GetMapping
     public List<Bookmark> getBookmarks(){
         return bookmarkService.findAllBookmarks();
     }
+
+
     @GetMapping("/{id}")
     public ResponseEntity<Bookmark> getBookmark(@PathVariable Long id){
     Optional<Bookmark> bookmark = bookmarkService.findBookmarkById(id);
@@ -33,6 +41,7 @@ public class BookmarkController {
     }
     return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteBookmark(@PathVariable Long id){
 
@@ -44,6 +53,12 @@ public class BookmarkController {
 
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
+    @GetMapping("/by-tag/{tagName}")
+    public List<Bookmark> getBookmarksByTag(@PathVariable String tagName){
+        return bookmarkService.findBookmarksByTag(tagName);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Bookmark> updateBookmark(
             @PathVariable Long id,
