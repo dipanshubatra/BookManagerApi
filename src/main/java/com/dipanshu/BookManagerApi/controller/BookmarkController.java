@@ -1,5 +1,6 @@
 package com.dipanshu.BookManagerApi.controller;
 
+
 import com.dipanshu.BookManagerApi.entity.Bookmark;
 import com.dipanshu.BookManagerApi.service.BookmarkService;
 import org.springframework.data.domain.Page;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-
 
 @RestController
 @RequestMapping("/bookmarks")
@@ -50,11 +50,11 @@ public class BookmarkController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Bookmark> getBookmark(@PathVariable Long id){
-    Optional<Bookmark> bookmark = bookmarkService.findBookmarkById(id);
-    if(bookmark.isPresent()){
-        return new ResponseEntity<>(bookmark.get(),HttpStatus.OK);
-    }
-    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        Optional<Bookmark> bookmark = bookmarkService.findBookmarkById(id);
+        if(bookmark.isPresent()){
+            return new ResponseEntity<>(bookmark.get(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("/{id}")
