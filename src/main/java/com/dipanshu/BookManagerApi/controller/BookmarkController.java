@@ -79,9 +79,15 @@ public class BookmarkController {
     }
 
     // Fetch bookmarks associated with a specific tag
-    @GetMapping("/by-tag/{tagName}")
-    public List<Bookmark> getBookmarksByTag(@PathVariable String tagName){
-        return bookmarkService.findBookmarksByTag(tagName);
+    @GetMapping("/tags/{tagName}")
+    public Page<Bookmark> getBookmarksByTag(
+            @PathVariable String tagName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        return bookmarkService.findBookmarksByTag(tagName, page, size, sortBy, direction);
     }
 
     // Update an existing bookmark

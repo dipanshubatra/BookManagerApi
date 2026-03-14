@@ -57,4 +57,7 @@ public class Bookmark {
     public void afterSave(){
         updatedAt = LocalDateTime.now();
     }
+
+    @Column(nullable = false)
+    private boolean deleted = false;
 }

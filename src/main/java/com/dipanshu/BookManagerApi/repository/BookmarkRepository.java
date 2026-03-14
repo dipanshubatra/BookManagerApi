@@ -14,10 +14,10 @@ public interface BookmarkRepository extends JpaRepository<Bookmark,Long> {
     // Fetch bookmarks associated with a specific tag (eagerly loads tags)
     @Query("SELECT DISTINCT b FROM Bookmark b JOIN FETCH b.tags t WHERE t.name = :tagName")
     List<Bookmark> findByTagsName(@Param("tagName") String tagName);
-
+    Page<Bookmark> findByTagsName(String tagName, Pageable pageable);
     // Fetch bookmarks with pagination
-    Page<Bookmark> findAll(Pageable pageable);
-
+    Page<Bookmark> findByDeletedFalse(Pageable pageable);
+    List<Bookmark> findByDeletedFalse();
     // Search bookmarks by title or description (case-insensitive)
     @Query("SELECT b FROM Bookmark b WHERE " +
             "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +

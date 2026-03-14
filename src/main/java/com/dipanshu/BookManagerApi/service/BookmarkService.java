@@ -40,7 +40,7 @@ public class BookmarkService {
     // Fetch all bookmarks
     @Transactional(readOnly = true)
     public List<Bookmark> findAllBookmarks(){
-        return bookmarkRepository.findAll();
+        return bookmarkRepository.findByDeletedFalse();
     }
 
     // Fetch bookmark by ID
@@ -51,15 +51,25 @@ public class BookmarkService {
 
     // Fetch bookmarks by tag name
     @Transactional(readOnly = true)
-    public List<Bookmark> findBookmarksByTag(String tagName) {
-        return bookmarkRepository.findByTagsName(tagName);
+    public Page<Bookmark> findBookmarksByTag(String tagName, int page, int size, String sortBy, String direction) {
+
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return bookmarkRepository.findByTagsName(tagName, pageable);
     }
 
     // Delete bookmark if it exists
     @Transactional
-    public boolean deleteBookmarkById(Long id) {
-        if(bookmarkRepository.existsById(id)){
-            bookmarkRepository.deleteById(id);
+    public boolean deleteBookmarkById(Long id){
+        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+        if(bookmarkOptional.isPresent()){
+            Bookmark bookmark = bookmarkOptional.get();
+            bookmark.setDeleted(true);
+            bookmarkRepository.save(bookmark);
             return true;
         }
         return false;
@@ -95,7 +105,7 @@ public class BookmarkService {
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return bookmarkRepository.findAll(pageable);
+        return bookmarkRepository.findByDeletedFalse(pageable);
     }
 
     // Search bookmarks with pagination + sorting
