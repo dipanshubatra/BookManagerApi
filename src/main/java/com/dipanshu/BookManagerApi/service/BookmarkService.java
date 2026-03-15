@@ -1,6 +1,7 @@
 package com.dipanshu.BookManagerApi.service;
 
 import com.dipanshu.BookManagerApi.entity.Bookmark;
+import com.dipanshu.BookManagerApi.entity.Tag;
 import com.dipanshu.BookManagerApi.repository.BookmarkRepository;
 import com.dipanshu.BookManagerApi.repository.TagRepository;
 import org.springframework.data.domain.*;
