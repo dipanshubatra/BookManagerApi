@@ -1,55 +1,128 @@
 package com.dipanshu.BookManagerApi.service;
 
 import com.dipanshu.BookManagerApi.entity.Bookmark;
-import com.dipanshu.BookManagerApi.entity.Tag;
 import com.dipanshu.BookManagerApi.repository.BookmarkRepository;
 import com.dipanshu.BookManagerApi.repository.TagRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
+
 @Service
 public class BookmarkService {
+
 
     private final BookmarkRepository bookmarkRepository;
     private final TagRepository tagRepository;
 
-    public BookmarkService(BookmarkRepository bookmarkRepository, TagRepository tagRepository){
+    public BookmarkService(BookmarkRepository bookmarkRepository, TagRepository tagRepository) {
         this.bookmarkRepository = bookmarkRepository;
         this.tagRepository = tagRepository;
     }
 
-    // Create bookmark and resolve tags (reuse existing or create new)
+    // Create bookmark and resolve tags
     @Transactional
-    public Bookmark createBookmark(Bookmark bookmark){
-        if(bookmark.getTags() != null && !bookmark.getTags().isEmpty()){
-            List<String> tagNames = bookmark.getTags().stream().map(Tag::getName).toList();
+    public Bookmark createBookmark(Bookmark bookmark) {
+
+        if (bookmark.getTags() != null && !bookmark.getTags().isEmpty()) {
+
+            List<String> tagNames = bookmark.getTags()
+                    .stream()
+                    .map(Tag::getName)
+                    .toList();
+
             Set<Tag> resolvedTags = resolveTags(tagNames);
             bookmark.setTags(resolvedTags);
         }
+
         return bookmarkRepository.save(bookmark);
     }
 
-    // Fetch all bookmarks
+    // Get all bookmarks
     @Transactional(readOnly = true)
-    public List<Bookmark> findAllBookmarks(){
-        return bookmarkRepository.findByDeletedFalse();
+    public List<Bookmark> findAllBookmarks() {
+        return bookmarkRepository.findAll();
     }
 
-    // Fetch bookmark by ID
+    // Get bookmark by id
     @Transactional(readOnly = true)
     public Optional<Bookmark> findBookmarkById(Long id) {
         return bookmarkRepository.findById(id);
     }
 
-    // Fetch bookmarks by tag name
+    // Delete bookmark (soft delete handled by Hibernate)
+    @Transactional
+    public boolean deleteBookmarkById(Long id) {
+
+        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+
+        if (bookmarkOptional.isPresent()) {
+            bookmarkRepository.delete(bookmarkOptional.get());
+            return true;
+        }
+
+        return false;
+    }
+
+    // Update bookmark
+    @Transactional
+    public Optional<Bookmark> updateBookmark(Long id, Bookmark updatedBookmark) {
+
+        Optional<Bookmark> existingBookmark = bookmarkRepository.findById(id);
+
+        if (existingBookmark.isPresent()) {
+
+            Bookmark bookmark = existingBookmark.get();
+
+            bookmark.setTitle(updatedBookmark.getTitle());
+            bookmark.setUrl(updatedBookmark.getUrl());
+            bookmark.setDescription(updatedBookmark.getDescription());
+
+            if (updatedBookmark.getTags() != null && !updatedBookmark.getTags().isEmpty()) {
+
+                List<String> tagNames = updatedBookmark.getTags()
+                        .stream()
+                        .map(Tag::getName)
+                        .toList();
+
+                bookmark.setTags(resolveTags(tagNames));
+            }
+
+            return Optional.of(bookmarkRepository.save(bookmark));
+        }
+
+        return Optional.empty();
+    }
+
+    // Pagination + sorting
+    @Transactional(readOnly = true)
+    public Page<Bookmark> findAllBookmarksPaginated(int page, int size, String sortBy, String direction) {
+
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return bookmarkRepository.findAll(pageable);
+    }
+
+    // Search bookmarks
+    @Transactional(readOnly = true)
+    public Page<Bookmark> searchBookmarks(String query, int page, int size, String sortBy, String direction) {
+
+        Sort sort = direction.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return bookmarkRepository.searchBookmarks(query, pageable);
+    }
+
+    // Filter bookmarks by tag
     @Transactional(readOnly = true)
     public Page<Bookmark> findBookmarksByTag(String tagName, int page, int size, String sortBy, String direction) {
 
@@ -62,74 +135,64 @@ public class BookmarkService {
         return bookmarkRepository.findByTagsName(tagName, pageable);
     }
 
-    // Delete bookmark if it exists
+    // Toggle favorite
     @Transactional
-    public boolean deleteBookmarkById(Long id){
+    public Optional<Bookmark> toggleFavorite(Long id) {
+
         Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
-        if(bookmarkOptional.isPresent()){
-            Bookmark bookmark = bookmarkOptional.get();
-            bookmark.setDeleted(true);
-            bookmarkRepository.save(bookmark);
-            return true;
+
+        if (bookmarkOptional.isEmpty()) {
+            return Optional.empty();
         }
-        return false;
+
+        Bookmark bookmark = bookmarkOptional.get();
+
+        bookmark.setFavorite(!bookmark.isFavorite());
+
+        Bookmark updatedBookmark = bookmarkRepository.save(bookmark);
+
+        return Optional.of(updatedBookmark);
     }
 
-    // Update bookmark details and tags
+    // Record bookmark visit
     @Transactional
-    public Optional<Bookmark> updateBookmark(Long id, Bookmark updatedBookmark) {
-        Optional<Bookmark> existingBookmark = bookmarkRepository.findById(id);
+    public Optional<Bookmark> recordVisit(Long id) {
 
-        if(existingBookmark.isPresent()){
-            Bookmark bookmark = existingBookmark.get();
+        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
 
-            bookmark.setTitle(updatedBookmark.getTitle());
-            bookmark.setUrl(updatedBookmark.getUrl());
-            bookmark.setDescription(updatedBookmark.getDescription());
-
-            if(updatedBookmark.getTags() != null && !updatedBookmark.getTags().isEmpty()){
-                List<String> tagNames = updatedBookmark.getTags().stream().map(Tag::getName).toList();
-                bookmark.setTags(resolveTags(tagNames));
-            }
-
-            return Optional.of(bookmarkRepository.save(bookmark));
+        if (bookmarkOptional.isEmpty()) {
+            return Optional.empty();
         }
 
-        return Optional.empty();
+        Bookmark bookmark = bookmarkOptional.get();
+
+        bookmark.setVisitCount(bookmark.getVisitCount() + 1);
+        bookmark.setLastVisitedAt(LocalDateTime.now());
+
+        Bookmark updatedBookmark = bookmarkRepository.save(bookmark);
+
+        return Optional.of(updatedBookmark);
     }
 
-    // Pagination + sorting for bookmarks
-    @Transactional(readOnly = true)
-    public Page<Bookmark> findAllBookmarksPaginated(int page, int size, String sortBy, String direction) {
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return bookmarkRepository.findByDeletedFalse(pageable);
-    }
+    // Resolve tag names
+    private Set<Tag> resolveTags(List<String> tagNames) {
 
-    // Search bookmarks with pagination + sorting
-    @Transactional(readOnly = true)
-    public Page<Bookmark> searchBookmarks(String query, int page, int size, String sortBy, String direction) {
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return bookmarkRepository.searchBookmarks(query, pageable);
-    }
-
-    // Resolve tag names: reuse existing tags or create new ones
-    private Set<Tag> resolveTags(List<String> tagNames){
         Set<Tag> tags = new HashSet<>();
-        for(String tagName : tagNames){
+
+        for (String tagName : tagNames) {
+
             Tag tag = tagRepository.findByName(tagName)
                     .orElseGet(() -> {
                         Tag newTag = new Tag();
                         newTag.setName(tagName);
                         return tagRepository.save(newTag);
                     });
+
             tags.add(tag);
         }
+
         return tags;
     }
+
+
 }
