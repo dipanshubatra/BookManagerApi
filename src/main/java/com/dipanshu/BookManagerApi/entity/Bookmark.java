@@ -1,7 +1,6 @@
 package com.dipanshu.BookManagerApi.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,7 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
 import org.hibernate.annotations.UpdateTimestamp;
-
+import com.dipanshu.BookManagerApi.entity.User;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -79,5 +78,8 @@ public class Bookmark {
     private long visitCount = 0;
 
     private LocalDateTime lastVisitedAt;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
 }
