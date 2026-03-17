@@ -1,105 +1,123 @@
 package com.dipanshu.BookManagerApi.service;
 
+import com.dipanshu.BookManagerApi.dto.*;
 import com.dipanshu.BookManagerApi.entity.Bookmark;
-import com.dipanshu.BookManagerApi.entity.Tag;
+import com.dipanshu.BookManagerApi.entity.User;
+import com.dipanshu.BookManagerApi.exception.ResourceNotFoundException;
 import com.dipanshu.BookManagerApi.repository.BookmarkRepository;
-import com.dipanshu.BookManagerApi.repository.TagRepository;
+import com.dipanshu.BookManagerApi.repository.UserRepository;
+
 import org.springframework.data.domain.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
 
 @Service
 public class BookmarkService {
 
-
     private final BookmarkRepository bookmarkRepository;
-    private final TagRepository tagRepository;
+    private final UserRepository userRepository;
 
-    public BookmarkService(BookmarkRepository bookmarkRepository, TagRepository tagRepository) {
+    public BookmarkService(BookmarkRepository bookmarkRepository,
+                           UserRepository userRepository) {
         this.bookmarkRepository = bookmarkRepository;
-        this.tagRepository = tagRepository;
+        this.userRepository = userRepository;
     }
 
-    // Create bookmark and resolve tags
+    // get logged-in user (via email from security context)
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    // convert entity → response DTO
+    private BookmarkResponse mapToResponse(Bookmark b) {
+        BookmarkResponse r = new BookmarkResponse();
+        r.setId(b.getId());
+        r.setTitle(b.getTitle());
+        r.setUrl(b.getUrl());
+        r.setDescription(b.getDescription());
+        r.setCreatedAt(b.getCreatedAt());
+        r.setVisitCount(b.getVisitCount());
+        r.setFavorite(b.isFavorite());
+        return r;
+    }
+
+    // CREATE
     @Transactional
-    public Bookmark createBookmark(Bookmark bookmark) {
+    public BookmarkResponse createBookmark(CreateBookmarkRequest request) {
 
-        if (bookmark.getTags() != null && !bookmark.getTags().isEmpty()) {
+        User user = getCurrentUser();
 
-            List<String> tagNames = bookmark.getTags()
-                    .stream()
-                    .map(Tag::getName)
-                    .toList();
+        Bookmark bookmark = new Bookmark();
+        bookmark.setTitle(request.getTitle());
+        bookmark.setUrl(request.getUrl());
+        bookmark.setDescription(request.getDescription());
 
-            Set<Tag> resolvedTags = resolveTags(tagNames);
-            bookmark.setTags(resolvedTags);
-        }
+        bookmark.setVisitCount(0);
+        bookmark.setCreatedAt(LocalDateTime.now()); // set creation time
+        bookmark.setUser(user);
 
-        return bookmarkRepository.save(bookmark);
+        return mapToResponse(bookmarkRepository.save(bookmark));
     }
 
-    // Get all bookmarks
+    // GET BY ID (user-scoped)
     @Transactional(readOnly = true)
-    public List<Bookmark> findAllBookmarks() {
-        return bookmarkRepository.findAll();
+    public BookmarkResponse findBookmarkById(Long id) {
+
+        User user = getCurrentUser();
+
+        Bookmark bookmark = bookmarkRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found"));
+
+        return mapToResponse(bookmark);
     }
 
-    // Get bookmark by id
-    @Transactional(readOnly = true)
-    public Optional<Bookmark> findBookmarkById(Long id) {
-        return bookmarkRepository.findById(id);
-    }
-
-    // Delete bookmark (soft delete handled by Hibernate)
+    // DELETE
     @Transactional
-    public boolean deleteBookmarkById(Long id) {
+    public void deleteBookmarkById(Long id) {
 
-        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+        User user = getCurrentUser();
 
-        if (bookmarkOptional.isPresent()) {
-            bookmarkRepository.delete(bookmarkOptional.get());
-            return true;
-        }
+        Bookmark bookmark = bookmarkRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found"));
 
-        return false;
+        bookmarkRepository.delete(bookmark);
     }
 
-    // Update bookmark
+    // UPDATE (partial update)
     @Transactional
-    public Optional<Bookmark> updateBookmark(Long id, Bookmark updatedBookmark) {
+    public BookmarkResponse updateBookmark(Long id, UpdateBookmarkRequest request) {
 
-        Optional<Bookmark> existingBookmark = bookmarkRepository.findById(id);
+        User user = getCurrentUser();
 
-        if (existingBookmark.isPresent()) {
+        Bookmark b = bookmarkRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found"));
 
-            Bookmark bookmark = existingBookmark.get();
+        if (request.getTitle() != null)
+            b.setTitle(request.getTitle());
 
-            bookmark.setTitle(updatedBookmark.getTitle());
-            bookmark.setUrl(updatedBookmark.getUrl());
-            bookmark.setDescription(updatedBookmark.getDescription());
+        if (request.getUrl() != null)
+            b.setUrl(request.getUrl());
 
-            if (updatedBookmark.getTags() != null && !updatedBookmark.getTags().isEmpty()) {
+        if (request.getDescription() != null)
+            b.setDescription(request.getDescription());
 
-                List<String> tagNames = updatedBookmark.getTags()
-                        .stream()
-                        .map(Tag::getName)
-                        .toList();
-
-                bookmark.setTags(resolveTags(tagNames));
-            }
-
-            return Optional.of(bookmarkRepository.save(bookmark));
-        }
-
-        return Optional.empty();
+        return mapToResponse(bookmarkRepository.save(b));
     }
 
-    // Pagination + sorting
+    // PAGINATION
     @Transactional(readOnly = true)
-    public Page<Bookmark> findAllBookmarksPaginated(int page, int size, String sortBy, String direction) {
+    public Page<BookmarkResponse> findAllBookmarksPaginated(
+            int page, int size, String sortBy, String direction) {
+
+        User user = getCurrentUser();
 
         Sort sort = direction.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
@@ -107,93 +125,68 @@ public class BookmarkService {
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return bookmarkRepository.findAll(pageable);
+        return bookmarkRepository.findByUser(user, pageable)
+                .map(this::mapToResponse);
     }
 
-    // Search bookmarks
+    // SEARCH
     @Transactional(readOnly = true)
-    public Page<Bookmark> searchBookmarks(String query, int page, int size, String sortBy, String direction) {
+    public Page<BookmarkResponse> searchBookmarks(
+            String query, int page, int size, String sortBy, String direction) {
 
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+        User user = getCurrentUser();
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page, size,
+                direction.equalsIgnoreCase("desc")
+                        ? Sort.by(sortBy).descending()
+                        : Sort.by(sortBy).ascending());
 
-        return bookmarkRepository.searchBookmarks(query, pageable);
+        return bookmarkRepository.searchBookmarks(query, user, pageable)
+                .map(this::mapToResponse);
     }
 
-    // Filter bookmarks by tag
+    // FILTER BY TAG
     @Transactional(readOnly = true)
-    public Page<Bookmark> findBookmarksByTag(String tagName, int page, int size, String sortBy, String direction) {
+    public Page<BookmarkResponse> findBookmarksByTag(
+            String tagName, int page, int size, String sortBy, String direction) {
 
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+        User user = getCurrentUser();
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page, size,
+                direction.equalsIgnoreCase("desc")
+                        ? Sort.by(sortBy).descending()
+                        : Sort.by(sortBy).ascending());
 
-        return bookmarkRepository.findByTagsName(tagName, pageable);
+        return bookmarkRepository.findByUserAndTagsName(user, tagName, pageable)
+                .map(this::mapToResponse);
     }
 
-    // Toggle favorite
+    // TOGGLE FAVORITE
     @Transactional
-    public Optional<Bookmark> toggleFavorite(Long id) {
+    public BookmarkResponse toggleFavorite(Long id) {
 
-        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+        User user = getCurrentUser();
 
-        if (bookmarkOptional.isEmpty()) {
-            return Optional.empty();
-        }
+        Bookmark b = bookmarkRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found"));
 
-        Bookmark bookmark = bookmarkOptional.get();
+        b.setFavorite(!b.isFavorite()); // flip boolean
 
-        bookmark.setFavorite(!bookmark.isFavorite());
-
-        Bookmark updatedBookmark = bookmarkRepository.save(bookmark);
-
-        return Optional.of(updatedBookmark);
+        return mapToResponse(bookmarkRepository.save(b));
     }
 
-    // Record bookmark visit
+    // RECORD VISIT
     @Transactional
-    public Optional<Bookmark> recordVisit(Long id) {
+    public BookmarkResponse recordVisit(Long id) {
 
-        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+        User user = getCurrentUser();
 
-        if (bookmarkOptional.isEmpty()) {
-            return Optional.empty();
-        }
+        Bookmark b = bookmarkRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found"));
 
-        Bookmark bookmark = bookmarkOptional.get();
+        b.setVisitCount(b.getVisitCount() + 1); // increment count
+        b.setLastVisitedAt(LocalDateTime.now()); // update timestamp
 
-        bookmark.setVisitCount(bookmark.getVisitCount() + 1);
-        bookmark.setLastVisitedAt(LocalDateTime.now());
-
-        Bookmark updatedBookmark = bookmarkRepository.save(bookmark);
-
-        return Optional.of(updatedBookmark);
+        return mapToResponse(bookmarkRepository.save(b));
     }
-
-    // Resolve tag names
-    private Set<Tag> resolveTags(List<String> tagNames) {
-
-        Set<Tag> tags = new HashSet<>();
-
-        for (String tagName : tagNames) {
-
-            Tag tag = tagRepository.findByName(tagName)
-                    .orElseGet(() -> {
-                        Tag newTag = new Tag();
-                        newTag.setName(tagName);
-                        return tagRepository.save(newTag);
-                    });
-
-            tags.add(tag);
-        }
-
-        return tags;
-    }
-
-
 }
