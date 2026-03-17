@@ -26,7 +26,7 @@ public class BookmarkService {
         this.userRepository = userRepository;
     }
 
-    // get logged-in user (via email from security context)
+    // get logged-in user
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext()
                 .getAuthentication()
