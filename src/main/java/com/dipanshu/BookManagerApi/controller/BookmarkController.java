@@ -1,12 +1,14 @@
 package com.dipanshu.BookManagerApi.controller;
 
-import com.dipanshu.BookManagerApi.dto.*;
+import com.dipanshu.BookManagerApi.dto.BookmarkRequestDTO;
+import com.dipanshu.BookManagerApi.dto.BookmarkResponseDTO;
 import com.dipanshu.BookManagerApi.service.BookmarkService;
-
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/bookmarks")
@@ -18,92 +20,101 @@ public class BookmarkController {
         this.bookmarkService = bookmarkService;
     }
 
-    // CREATE
+    // notio CREATE
     @PostMapping
-    public ResponseEntity<BookmarkResponse> createBookmark(
-            @Valid @RequestBody CreateBookmarkRequest request) {
+    public BookmarkResponseDTO createBookmark(
+            @Valid @RequestBody BookmarkRequestDTO dto) {
 
-        return ResponseEntity.ok(bookmarkService.createBookmark(request));
+        return bookmarkService.createBookmark(dto);
     }
 
-    // GET ALL (PAGINATED)
+    // PAGINATION
     @GetMapping
-    public ResponseEntity<Page<BookmarkResponse>> getBookmarks(
+    public Page<BookmarkResponseDTO> getBookmarks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
 
-        return ResponseEntity.ok(
-                bookmarkService.findAllBookmarksPaginated(page, size, sortBy, direction)
-        );
+        return bookmarkService.findAllBookmarksPaginated(page, size, sortBy, direction);
     }
 
-    // SEARCH
+    //  SEARCH
     @GetMapping("/search")
-    public ResponseEntity<Page<BookmarkResponse>> searchBookmarks(
+    public Page<BookmarkResponseDTO> searchBookmarks(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
 
-        return ResponseEntity.ok(
-                bookmarkService.searchBookmarks(query, page, size, sortBy, direction)
-        );
+        return bookmarkService.searchBookmarks(query, page, size, sortBy, direction);
     }
 
-    // GET BY ID
+    //  GET BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<BookmarkResponse> getBookmark(@PathVariable Long id) {
+    public ResponseEntity<BookmarkResponseDTO> getBookmark(@PathVariable Long id) {
 
-        BookmarkResponse response = bookmarkService.findBookmarkById(id);
-        return ResponseEntity.ok(response);
+        BookmarkResponseDTO bookmark = bookmarkService.findBookmarkById(id);
+
+        return ResponseEntity.ok(bookmark);
     }
 
-    // DELETE
+    //  DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBookmark(@PathVariable Long id) {
 
-        bookmarkService.deleteBookmarkById(id);
-        return ResponseEntity.noContent().build();
+        boolean deleted = bookmarkService.deleteBookmarkById(id);
+
+        return deleted
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
-    // UPDATE (PATCH)
-    @PatchMapping("/{id}")
-    public ResponseEntity<BookmarkResponse> updateBookmark(
+    //  UPDATE
+    @PutMapping("/{id}")
+    public ResponseEntity<BookmarkResponseDTO> updateBookmark(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateBookmarkRequest request) {
+            @Valid @RequestBody BookmarkRequestDTO dto) {
 
-        BookmarkResponse updated = bookmarkService.updateBookmark(id, request);
-        return ResponseEntity.ok(updated);
+        Optional<BookmarkResponseDTO> updated =
+                bookmarkService.updateBookmark(id, dto);
+
+        return updated.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // FILTER BY TAG
+    //  FILTER BY TAG
     @GetMapping("/tags/{tagName}")
-    public ResponseEntity<Page<BookmarkResponse>> getBookmarksByTag(
+    public Page<BookmarkResponseDTO> getBookmarksByTag(
             @PathVariable String tagName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
 
-        return ResponseEntity.ok(
-                bookmarkService.findBookmarksByTag(tagName, page, size, sortBy, direction)
-        );
+        return bookmarkService.findBookmarksByTag(tagName, page, size, sortBy, direction);
     }
 
-    // TOGGLE FAVORITE
+    //  TOGGLE FAVORITE
     @PatchMapping("/{id}/favorite")
-    public ResponseEntity<BookmarkResponse> toggleFavorite(@PathVariable Long id) {
+    public ResponseEntity<BookmarkResponseDTO> toggleFavorite(@PathVariable Long id) {
 
-        return ResponseEntity.ok(bookmarkService.toggleFavorite(id));
+        Optional<BookmarkResponseDTO> bookmark =
+                bookmarkService.toggleFavorite(id);
+
+        return bookmark.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // RECORD VISIT
     @PostMapping("/{id}/visit")
-    public ResponseEntity<BookmarkResponse> recordVisit(@PathVariable Long id) {
+    public ResponseEntity<BookmarkResponseDTO> recordVisit(@PathVariable Long id) {
 
-        return ResponseEntity.ok(bookmarkService.recordVisit(id));
+        Optional<BookmarkResponseDTO> bookmark =
+                bookmarkService.recordVisit(id);
+
+        return bookmark.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

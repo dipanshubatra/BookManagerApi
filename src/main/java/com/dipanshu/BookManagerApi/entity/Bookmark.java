@@ -4,12 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
 import org.hibernate.annotations.UpdateTimestamp;
-import com.dipanshu.BookManagerApi.entity.User;
+
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -42,9 +45,12 @@ public class Bookmark {
     private String description;
 
     // Creation timestamp
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     // Last update timestamp
+    @UpdateTimestamp
     private LocalDateTime updatedAt;
 
     // Many-to-many relationship with tags
@@ -57,19 +63,7 @@ public class Bookmark {
     @JsonIgnoreProperties("bookmarks")
     private Set<Tag> tags;
 
-    // Automatically set creation time before insert
-    @CreationTimestamp
-    @PrePersist
-    public void beforeSave() {
-        createdAt = LocalDateTime.now();
-    }
 
-    // Automatically update timestamp before update
-    @UpdateTimestamp
-    @PreUpdate
-    public void afterSave(){
-        updatedAt = LocalDateTime.now();
-    }
 
     @Column(nullable = false)
     private boolean favorite = false;
@@ -78,8 +72,9 @@ public class Bookmark {
     private long visitCount = 0;
 
     private LocalDateTime lastVisitedAt;
+
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
 }

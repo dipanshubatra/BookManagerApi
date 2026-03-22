@@ -1,12 +1,11 @@
 package com.dipanshu.BookManagerApi.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 
-@Getter
+@Data
 @AllArgsConstructor
 public class AuthResponse {
-
     private String token;
-
+    private String type;
 }

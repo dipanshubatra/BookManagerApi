@@ -1,14 +1,10 @@
 package com.dipanshu.BookManagerApi.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
-import java.util.Set;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users")
@@ -22,22 +18,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    private String name;
-
-    @Email
-    @NotBlank
     @Column(unique = true, nullable = false)
-    private String email;
+    private String username;
 
-    @JsonIgnore
-    @NotBlank
+    @Column(nullable = false)
     private String password;
 
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private Set<Bookmark> bookmarks;
+    private String role; // USER
 }
