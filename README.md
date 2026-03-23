@@ -201,7 +201,7 @@ GET /bookmarks/search?query=google&page=0&size=10
 ### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/your-username/BookManagerApi.git
+git clone https://github.com/dipanshubatra/BookManagerApi.git
 cd BookManagerApi
 ```
 
