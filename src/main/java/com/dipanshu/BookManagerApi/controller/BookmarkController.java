@@ -2,7 +2,7 @@ package com.dipanshu.BookManagerApi.controller;
 
 import com.dipanshu.BookManagerApi.dto.BookmarkRequestDTO;
 import com.dipanshu.BookManagerApi.dto.BookmarkResponseDTO;
-import com.dipanshu.BookManagerApi.service.BookmarkService;
+import com.dipanshu.BookManagerApi.service.BookmarkServiceImpl;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +14,9 @@ import java.util.Optional;
 @RequestMapping("/bookmarks")
 public class BookmarkController {
 
-    private final BookmarkService bookmarkService;
+    private final BookmarkServiceImpl bookmarkService;
 
-    public BookmarkController(BookmarkService bookmarkService) {
+    public BookmarkController(BookmarkServiceImpl bookmarkService) {
         this.bookmarkService = bookmarkService;
     }
 
