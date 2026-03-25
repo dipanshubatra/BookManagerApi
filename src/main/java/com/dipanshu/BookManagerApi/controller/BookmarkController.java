@@ -20,7 +20,6 @@ public class BookmarkController {
         this.bookmarkService = bookmarkService;
     }
 
-    // notio CREATE
     @PostMapping
     public BookmarkResponseDTO createBookmark(
             @Valid @RequestBody BookmarkRequestDTO dto) {
@@ -28,7 +27,6 @@ public class BookmarkController {
         return bookmarkService.createBookmark(dto);
     }
 
-    // PAGINATION
     @GetMapping
     public Page<BookmarkResponseDTO> getBookmarks(
             @RequestParam(defaultValue = "0") int page,
@@ -39,7 +37,6 @@ public class BookmarkController {
         return bookmarkService.findAllBookmarksPaginated(page, size, sortBy, direction);
     }
 
-    //  SEARCH
     @GetMapping("/search")
     public Page<BookmarkResponseDTO> searchBookmarks(
             @RequestParam String query,
@@ -51,7 +48,6 @@ public class BookmarkController {
         return bookmarkService.searchBookmarks(query, page, size, sortBy, direction);
     }
 
-    //  GET BY ID
     @GetMapping("/{id}")
     public ResponseEntity<BookmarkResponseDTO> getBookmark(@PathVariable Long id) {
 
@@ -60,7 +56,6 @@ public class BookmarkController {
         return ResponseEntity.ok(bookmark);
     }
 
-    //  DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBookmark(@PathVariable Long id) {
 
@@ -71,7 +66,6 @@ public class BookmarkController {
                 : ResponseEntity.notFound().build();
     }
 
-    //  UPDATE
     @PutMapping("/{id}")
     public ResponseEntity<BookmarkResponseDTO> updateBookmark(
             @PathVariable Long id,
@@ -84,7 +78,6 @@ public class BookmarkController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    //  FILTER BY TAG
     @GetMapping("/tags/{tagName}")
     public Page<BookmarkResponseDTO> getBookmarksByTag(
             @PathVariable String tagName,
@@ -96,7 +89,6 @@ public class BookmarkController {
         return bookmarkService.findBookmarksByTag(tagName, page, size, sortBy, direction);
     }
 
-    //  TOGGLE FAVORITE
     @PatchMapping("/{id}/favorite")
     public ResponseEntity<BookmarkResponseDTO> toggleFavorite(@PathVariable Long id) {
 
@@ -107,7 +99,6 @@ public class BookmarkController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // RECORD VISIT
     @PostMapping("/{id}/visit")
     public ResponseEntity<BookmarkResponseDTO> recordVisit(@PathVariable Long id) {
 

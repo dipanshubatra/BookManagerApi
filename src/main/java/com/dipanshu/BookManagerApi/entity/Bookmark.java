@@ -1,80 +1,46 @@
 package com.dipanshu.BookManagerApi.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.SoftDeleteType;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "bookmarks")
-@SoftDelete(strategy = SoftDeleteType.DELETED)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Bookmark {
 
-    // Primary key (auto-increment)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Bookmark title
-    @NotBlank(message = "Title cannot be empty")
-    @Size(max=200)
     private String title;
-
-    // Bookmark URL
-    @NotBlank(message = "Url cannot be empty")
     private String url;
 
-    // Optional description
-    @Size(max=500)
-    private String description;
-
-    // Creation timestamp
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    // Last update timestamp
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
-    // Many-to-many relationship with tags
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "bookmark_tags",
             joinColumns = @JoinColumn(name = "bookmark_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
+            inverseJoinColumns = @JoinColumn(name = "tag_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"bookmark_id", "tag_id"})
     )
-    @JsonIgnoreProperties("bookmarks")
-    private Set<Tag> tags;
+    private Set<Tag> tags = new HashSet<>();
 
 
+    public void addTag(Tag tag) {
+        this.tags.add(tag);
+        tag.getBookmarks().add(this);
+    }
 
-    @Column(nullable = false)
-    private boolean favorite = false;
-
-    @Column(nullable = false)
-    private long visitCount = 0;
-
-    private LocalDateTime lastVisitedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
+    public void removeTag(Tag tag) {
+        this.tags.remove(tag);
+        tag.getBookmarks().remove(this);
+    }
 }

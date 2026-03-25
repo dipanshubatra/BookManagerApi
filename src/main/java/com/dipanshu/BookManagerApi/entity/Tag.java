@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -17,19 +18,13 @@ import java.util.Set;
 @AllArgsConstructor
 public class Tag {
 
-
-    // Primary key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Tag name must be unique
     @Column(unique = true, nullable = false)
     private String name;
 
-    // Inverse side of ManyToMany relationship
-    @ManyToMany(mappedBy = "tags")
-    @JsonIgnore
-    private Set<Bookmark> bookmarks;
-
+    @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
+    private Set<Bookmark> bookmarks = new HashSet<>();
 }

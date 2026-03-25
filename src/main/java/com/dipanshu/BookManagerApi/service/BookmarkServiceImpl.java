@@ -33,7 +33,9 @@ public class BookmarkServiceImpl implements BookmarkService {
     @Override
     @Transactional
     public BookmarkResponseDTO createBookmark(BookmarkRequestDTO dto) {
-        logger.info("Creating bookmark with title: {}", dto.getTitle());
+
+        long start = System.currentTimeMillis();
+        logger.info("START createBookmark | title={} | url={}", dto.getTitle(), dto.getUrl());
 
         Bookmark bookmark = BookmarkMapper.toEntity(dto);
 
@@ -42,69 +44,81 @@ public class BookmarkServiceImpl implements BookmarkService {
                     .map(tag -> tag.trim().toLowerCase())
                     .toList();
 
+            logger.debug("Resolving tags: {}", tagNames);
             bookmark.setTags(resolveTags(tagNames));
         }
 
         Bookmark saved = bookmarkRepository.save(bookmark);
+
+        logger.info("SUCCESS createBookmark | id={} | timeTaken={}ms",
+                saved.getId(), System.currentTimeMillis() - start);
+
         return BookmarkMapper.toDTO(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<BookmarkResponseDTO> findAllBookmarks() {
-        logger.info("Fetching all bookmarks");
 
         List<BookmarkResponseDTO> list = bookmarkRepository.findAll()
                 .stream()
                 .map(BookmarkMapper::toDTO)
                 .toList();
 
-        logger.info("Total bookmarks fetched: {}", list.size());
+        logger.info("Fetched all bookmarks | count={}", list.size());
+
         return list;
     }
 
     @Override
     @Transactional(readOnly = true)
     public BookmarkResponseDTO findBookmarkById(Long id) {
-        logger.info("Fetching bookmark with id: {}", id);
 
-        return bookmarkRepository.findById(id)
-                .map(BookmarkMapper::toDTO)
-                .orElseThrow(() -> {
-                    logger.warn("Bookmark not found with id: {}", id);
-                    return new ResourceNotFoundException("Bookmark not found with id: " + id);
-                });
+        logger.info("Fetching bookmark | id={}", id);
+
+        Bookmark bookmark = bookmarkRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found with id: " + id));
+
+        return BookmarkMapper.toDTO(bookmark);
     }
 
     @Override
     @Transactional
     public boolean deleteBookmarkById(Long id) {
-        logger.info("Deleting bookmark with id: {}", id);
 
-        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+        long start = System.currentTimeMillis();
+        logger.info("START deleteBookmarkById | id={}", id);
 
-        if (bookmarkOptional.isPresent()) {
-            bookmarkRepository.delete(bookmarkOptional.get());
-            return true;
+        Optional<Bookmark> optionalBookmark = bookmarkRepository.findById(id);
+
+        if (optionalBookmark.isEmpty()) {
+            logger.warn("NOT FOUND deleteBookmarkById | id={}", id);
+            return false;
         }
 
-        logger.warn("Bookmark not found for deletion: {}", id);
-        return false;
+        bookmarkRepository.delete(optionalBookmark.get());
+
+        logger.info("SUCCESS deleteBookmarkById | id={} | timeTaken={}ms",
+                id, System.currentTimeMillis() - start);
+
+        return true;
     }
 
     @Override
     @Transactional
     public Optional<BookmarkResponseDTO> updateBookmark(Long id, BookmarkRequestDTO dto) {
-        logger.info("Updating bookmark with id: {}", id);
 
-        Optional<Bookmark> existingBookmark = bookmarkRepository.findById(id);
+        long start = System.currentTimeMillis();
+        logger.info("START updateBookmark | id={}", id);
 
-        if (existingBookmark.isEmpty()) {
-            logger.warn("Bookmark not found for update: {}", id);
+        Optional<Bookmark> optionalBookmark = bookmarkRepository.findById(id);
+
+        if (optionalBookmark.isEmpty()) {
+            logger.warn("NOT FOUND updateBookmark | id={}", id);
             return Optional.empty();
         }
 
-        Bookmark bookmark = existingBookmark.get();
+        Bookmark bookmark = optionalBookmark.orElseThrow();
 
         bookmark.setTitle(dto.getTitle());
         bookmark.setUrl(dto.getUrl());
@@ -119,6 +133,10 @@ public class BookmarkServiceImpl implements BookmarkService {
         }
 
         Bookmark updated = bookmarkRepository.save(bookmark);
+
+        logger.info("SUCCESS updateBookmark | id={} | timeTaken={}ms",
+                id, System.currentTimeMillis() - start);
+
         return Optional.of(BookmarkMapper.toDTO(updated));
     }
 
@@ -126,48 +144,94 @@ public class BookmarkServiceImpl implements BookmarkService {
     @Transactional(readOnly = true)
     public Page<BookmarkResponseDTO> findAllBookmarksPaginated(int page, int size, String sortBy, String direction) {
 
+        long start = System.currentTimeMillis();
+        logger.info("START findAllBookmarksPaginated | page={} | size={} | sortBy={} | direction={}",
+                page, size, sortBy, direction);
+
         Sort sort = direction.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return bookmarkRepository.findAll(pageable)
+        Page<BookmarkResponseDTO> result = bookmarkRepository.findAll(pageable)
                 .map(BookmarkMapper::toDTO);
+
+        logger.info("SUCCESS findAllBookmarksPaginated | totalElements={} | timeTaken={}ms",
+                result.getTotalElements(), System.currentTimeMillis() - start);
+
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<BookmarkResponseDTO> searchBookmarks(String query, int page, int size, String sortBy, String direction) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        long start = System.currentTimeMillis();
+        logger.info("START searchBookmarks | query={} | page={} | size={} | sortBy={} | direction={}",
+                query, page, size, sortBy, direction);
 
-        return bookmarkRepository.searchBookmarks(query, pageable)
+        Sort sort = "desc".equalsIgnoreCase(direction)
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<BookmarkResponseDTO> result = bookmarkRepository.searchBookmarks(query, pageable)
                 .map(BookmarkMapper::toDTO);
+
+        logger.info("SUCCESS searchBookmarks | results={} | timeTaken={}ms",
+                result.getTotalElements(), System.currentTimeMillis() - start);
+
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<BookmarkResponseDTO> findBookmarksByTag(String tagName, int page, int size, String sortBy, String direction) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        long start = System.currentTimeMillis();
+        logger.info("START findBookmarksByTag | tag={} | page={} | size={} | sortBy={} | direction={}",
+                tagName, page, size, sortBy, direction);
 
-        return bookmarkRepository.findByTagsName(tagName, pageable)
+        Sort sort = "desc".equalsIgnoreCase(direction)
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<BookmarkResponseDTO> result = bookmarkRepository.findByTagsName(tagName, pageable)
                 .map(BookmarkMapper::toDTO);
+
+        logger.info("SUCCESS findBookmarksByTag | count={} | timeTaken={}ms",
+                result.getTotalElements(), System.currentTimeMillis() - start);
+
+        return result;
     }
 
     @Override
     @Transactional
     public Optional<BookmarkResponseDTO> toggleFavorite(Long id) {
 
-        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+        long start = System.currentTimeMillis();
+        logger.info("START toggleFavorite | id={}", id);
 
-        if (bookmarkOptional.isEmpty()) return Optional.empty();
+        Optional<Bookmark> optional = bookmarkRepository.findById(id);
 
-        Bookmark bookmark = bookmarkOptional.get();
+        if (optional.isEmpty()) {
+            logger.warn("NOT FOUND toggleFavorite | id={}", id);
+            return Optional.empty();
+        }
+
+        Bookmark bookmark = optional.orElseThrow();
+
         bookmark.setFavorite(!bookmark.isFavorite());
 
         Bookmark updated = bookmarkRepository.save(bookmark);
+
+        logger.info("SUCCESS toggleFavorite | id={} | newValue={} | timeTaken={}ms",
+                id, updated.isFavorite(), System.currentTimeMillis() - start);
+
         return Optional.of(BookmarkMapper.toDTO(updated));
     }
 
@@ -175,16 +239,26 @@ public class BookmarkServiceImpl implements BookmarkService {
     @Transactional
     public Optional<BookmarkResponseDTO> recordVisit(Long id) {
 
-        Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(id);
+        long start = System.currentTimeMillis();
+        logger.info("START recordVisit | id={}", id);
 
-        if (bookmarkOptional.isEmpty()) return Optional.empty();
+        Optional<Bookmark> optional = bookmarkRepository.findById(id);
 
-        Bookmark bookmark = bookmarkOptional.get();
+        if (optional.isEmpty()) {
+            logger.warn("NOT FOUND recordVisit | id={}", id);
+            return Optional.empty();
+        }
+
+        Bookmark bookmark = optional.orElseThrow();
 
         bookmark.setVisitCount(bookmark.getVisitCount() + 1);
         bookmark.setLastVisitedAt(LocalDateTime.now());
 
         Bookmark updated = bookmarkRepository.save(bookmark);
+
+        logger.info("SUCCESS recordVisit | id={} | visits={} | timeTaken={}ms",
+                id, updated.getVisitCount(), System.currentTimeMillis() - start);
+
         return Optional.of(BookmarkMapper.toDTO(updated));
     }
 
@@ -193,7 +267,6 @@ public class BookmarkServiceImpl implements BookmarkService {
         Set<Tag> tags = new HashSet<>();
 
         for (String tagName : tagNames) {
-
             Tag tag = tagRepository.findByName(tagName)
                     .orElseGet(() -> {
                         Tag newTag = new Tag();

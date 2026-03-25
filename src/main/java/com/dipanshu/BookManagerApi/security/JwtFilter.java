@@ -30,7 +30,7 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        System.out.println("Authorization Header: " + request.getHeader("Authorization"));
+        logger.info("Authorization Header received");
         String path = request.getRequestURI();
 
         if (path.startsWith("/auth/")) {
