@@ -2,64 +2,59 @@ package com.dipanshu.BookManagerApi.controller;
 
 import com.dipanshu.BookManagerApi.dto.AuthResponse;
 import com.dipanshu.BookManagerApi.dto.LoginRequest;
-import com.dipanshu.BookManagerApi.entity.User;
-import com.dipanshu.BookManagerApi.repository.UserRepository;
-import com.dipanshu.BookManagerApi.security.JwtUtil;
+import com.dipanshu.BookManagerApi.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    public AuthController(AuthenticationManager authManager, JwtUtil jwtUtil,
-                          UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.authenticationManager = authManager;
-        this.jwtUtil = jwtUtil;
-        this.passwordEncoder = passwordEncoder;
-    }
+    private final AuthService authService;
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+    public ResponseEntity<AuthResponse> login(
+            @RequestBody LoginRequest request,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
+            HttpServletResponse response) {
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow();
+        AuthResponse auth = authService.login(request.getUsername(), request.getPassword(), deviceId);
+        setRefreshTokenCookie(response, auth.getRefreshToken());
+        return ResponseEntity.ok(new AuthResponse(auth.getAccessToken(), null));
+    }
 
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
-        return new AuthResponse(token, "Bearer");
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(
+            @CookieValue("refreshToken") String refreshToken,
+            @RequestHeader(value = "X-Device-Id", required = false) String deviceId,
+            HttpServletResponse response) {
+
+        AuthResponse auth = authService.refresh(refreshToken, deviceId);
+        setRefreshTokenCookie(response, auth.getRefreshToken());
+        return ResponseEntity.ok(new AuthResponse(auth.getAccessToken(), null));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody LoginRequest request) {
-
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            return ResponseEntity.badRequest().body("Username already taken");
-        }
-
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole("USER");
-        userRepository.save(user);
-
+        authService.register(request);
         return ResponseEntity.ok("Registered successfully");
+    }
+
+    private void setRefreshTokenCookie(HttpServletResponse response, String token) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", token)
+                .httpOnly(true)
+                .secure(false)
+                .path("/auth/refresh")
+                .maxAge(Duration.ofDays(7))
+                .sameSite("Strict")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

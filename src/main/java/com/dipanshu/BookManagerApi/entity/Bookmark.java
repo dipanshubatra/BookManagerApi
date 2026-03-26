@@ -1,28 +1,45 @@
 package com.dipanshu.BookManagerApi.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
 @Table(name = "bookmarks")
+@SoftDelete(strategy = SoftDeleteType.DELETED)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Bookmark {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 200)
     private String title;
+
+    @Column(nullable = false)
     private String url;
+
+    @Column(length = 500)
+    private String description;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -33,14 +50,15 @@ public class Bookmark {
     )
     private Set<Tag> tags = new HashSet<>();
 
+    @Column(nullable = false)
+    private boolean favorite = false;
 
-    public void addTag(Tag tag) {
-        this.tags.add(tag);
-        tag.getBookmarks().add(this);
-    }
+    @Column(nullable = false)
+    private long visitCount = 0;
 
-    public void removeTag(Tag tag) {
-        this.tags.remove(tag);
-        tag.getBookmarks().remove(this);
-    }
+    private LocalDateTime lastVisitedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
