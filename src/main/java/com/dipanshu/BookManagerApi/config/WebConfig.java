@@ -14,7 +14,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173") // frontend
+                        .allowedOrigins("http://localhost:5173","https://bookmark-apifrontend.vercel.app") // frontend
                         .allowedMethods("*")
                         .allowedHeaders("*")
                         .allowCredentials(true);
