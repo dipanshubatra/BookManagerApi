@@ -1,0 +1,26 @@
+[33me96aa92[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m feat: Logging added
+[33m244b1d7[m feat: Logging added
+[33mf66b26d[m README.md file creation
+[33m7e46a71[m README.md file creation
+[33m876961e[m feat: dockerized
+[33m883b750[m feat: properties changed
+[33m264ddca[m feat: error fixes
+[33mbb5573a[m bug: fixes some repository issues
+[33m52a2425[m feat(security): added Security
+[33md4da72b[m feat(security): added Security
+[33m2c40835[m added Dependecies
+[33m7815dde[m added comment
+[33me581676[m added comment
+[33m4c2a3b9[m feat: add soft delete for the recovery of data
+[33mcbed836[m docs: add minimal comments for better code readability
+[33me6a13d3[m docs: add minimal comments for better code readability
+[33me25bd1b[m feat: implement tag system with many-to-many bookmark relationship and tag filtering
+[33m7f61a87[m feat: implement tag system with many-to-many bookmark relationship and tag filtering
+[33m547ce24[m feat: implement tag system with Bookmark–Tag many-to-many mapping and tag resolution logic
+[33me275227[m feat: implement tag system with Bookmark–Tag many-to-many mapping and tag resolution logic
+[33m0cc22f9[m feat(Tag): add the tag class to define the table and its relationship
+[33m2aeb169[m feat(bookmark): add put endpoint to put and update bookmark by id and json send by client
+[33m025a50a[m feat(bookmark): add delete endpoint to delete bookmark by id
+[33mdb2a844[m feat(bookmark): add GET endpoint to retrieve bookmark by id
+[33mef9eabb[m configured the error
+[33m776492a[m Initial commit
