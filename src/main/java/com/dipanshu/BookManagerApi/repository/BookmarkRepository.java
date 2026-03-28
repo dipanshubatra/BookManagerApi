@@ -10,10 +10,9 @@ import org.springframework.data.repository.query.Param;
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     Page<Bookmark> findByUserUsername(String username, Pageable pageable);
-    // Find bookmarks by tag name with pagination
+
     Page<Bookmark> findByTagsName(String tagName, Pageable pageable);
 
-    // Search bookmarks by title or description
     @Query("SELECT b FROM Bookmark b WHERE " +
             "LOWER(b.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             "LOWER(b.description) LIKE LOWER(CONCAT('%', :query, '%'))")

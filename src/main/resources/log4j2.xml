@@ -5,59 +5,44 @@
 
         <!-- Console Appender -->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} - %level - %msg%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %c - %msg%n"/>
         </Console>
 
-        <!-- File Appender -->
-        <File name="File" fileName="logs/app.log">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} - %level - %msg%n"/>
-        </File>
+        <!-- Rolling File Appender -->
+        <RollingFile name="File"
+                     fileName="logs/app.log"
+                     filePattern="logs/app-%d{yyyy-MM-dd}-%i.log.gz">
+
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %c - %msg%n"/>
+
+            <Policies>
+                <!-- Rotate daily -->
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <!-- Rotate if file > 10MB -->
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+
+            <!-- Keep max 10 old logs -->
+            <DefaultRolloverStrategy max="10"/>
+
+        </RollingFile>
 
     </Appenders>
 
     <Loggers>
 
-        <Root level="info">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="File"/>
-        </Root>
-
+        <!-- Application-specific logs -->
         <Logger name="com.dipanshu.BookManagerApi" level="debug" additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="File"/>
         </Logger>
 
+        <!-- Root logger -->
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+        </Root>
+
     </Loggers>
-
-</Configuration><?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
-
-<Appenders>
-
-    <!-- Console Appender -->
-    <Console name="Console" target="SYSTEM_OUT">
-        <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} - %level - %msg%n"/>
-    </Console>
-
-    <!-- File Appender -->
-    <File name="File" fileName="logs/app.log">
-        <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} - %level - %msg%n"/>
-    </File>
-
-</Appenders>
-
-<Loggers>
-
-    <Root level="info">
-        <AppenderRef ref="Console"/>
-        <AppenderRef ref="File"/>
-    </Root>
-
-    <Logger name="com.dipanshu.BookManagerApi" level="debug" additivity="false">
-        <AppenderRef ref="Console"/>
-        <AppenderRef ref="File"/>
-    </Logger>
-
-</Loggers>
 
 </Configuration>

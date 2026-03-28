@@ -8,7 +8,6 @@ import java.util.Optional;
 public interface TagRepository extends JpaRepository<Tag, Long> {
 
 
-    // Find tag by name (used to reuse existing tags instead of creating duplicates)
     Optional<Tag> findByName(String name);
 
 

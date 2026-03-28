@@ -61,7 +61,7 @@ public class BookmarkController {
 
         boolean deleted = bookmarkService.deleteBookmarkById(id);
 
-        return deleted
+       return deleted
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
     }
@@ -76,6 +76,7 @@ public class BookmarkController {
 
         return updated.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+
     }
 
     @GetMapping("/tags/{tagName}")

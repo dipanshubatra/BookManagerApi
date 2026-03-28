@@ -19,6 +19,5 @@ public class BookmarkRequestDTO {
     @Size(max = 500)
     private String description;
 
-    // Only tag names, not full Tag object
     private Set<String> tags;
 }
