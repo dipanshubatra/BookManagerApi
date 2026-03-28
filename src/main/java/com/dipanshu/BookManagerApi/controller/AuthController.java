@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-
+@CrossOrigin(origins = "https://bookmark-apifrontend.vercel.app/")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
