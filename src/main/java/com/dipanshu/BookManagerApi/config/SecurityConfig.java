@@ -27,7 +27,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/bookmarks/**").hasRole("USER")
                         .anyRequest().authenticated()
                 )
