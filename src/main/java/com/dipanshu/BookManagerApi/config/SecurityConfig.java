@@ -13,6 +13,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 public class SecurityConfig {
 
@@ -51,9 +53,9 @@ public class SecurityConfig {
         org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
 
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(java.util.List.of(
+        config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
-                "https://bookmark-apifrontend.vercel.app"
+                "https://*.vercel.app"
         ));
         config.setAllowedHeaders(java.util.List.of("*"));
         config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
