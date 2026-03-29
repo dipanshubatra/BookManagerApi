@@ -16,21 +16,6 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleNotfound(Exception ex) {
-
-        logger.error("Unhandled exception occurred", ex);
-
-        ErrorResponse error = new ErrorResponse(
-                false,
-                "Something went wrong",   // 💀 YOU HIDE EVERYTHING HERE
-                "INTERNAL_SERVER_ERROR",
-                LocalDateTime.now()
-        );
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
 
@@ -52,12 +37,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
-
+        ex.printStackTrace();
         logger.error("Unhandled exception occurred", ex);
 
         ErrorResponse error = new ErrorResponse(
                 false,
-                "Something went wrong",
+                ex.getMessage(),
                 "INTERNAL_SERVER_ERROR",
                 LocalDateTime.now()
         );
