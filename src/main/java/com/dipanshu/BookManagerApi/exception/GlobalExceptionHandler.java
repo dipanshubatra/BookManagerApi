@@ -16,19 +16,19 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleNotfound(Exception ex) {
 
-        logger.warn("Resource not found: {}", ex.getMessage());
+        logger.error("Unhandled exception occurred", ex);
 
         ErrorResponse error = new ErrorResponse(
                 false,
-                ex.getMessage(),
-                "RESOURCE_NOT_FOUND",
+                "Something went wrong",   // 💀 YOU HIDE EVERYTHING HERE
+                "INTERNAL_SERVER_ERROR",
                 LocalDateTime.now()
         );
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
