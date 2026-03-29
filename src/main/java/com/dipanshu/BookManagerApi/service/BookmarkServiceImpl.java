@@ -1,5 +1,7 @@
 package com.dipanshu.BookManagerApi.service;
-
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.dipanshu.BookManagerApi.entity.User;
+import com.dipanshu.BookManagerApi.repository.UserRepository;
 import com.dipanshu.BookManagerApi.dto.BookmarkRequestDTO;
 import com.dipanshu.BookManagerApi.dto.BookmarkResponseDTO;
 import com.dipanshu.BookManagerApi.entity.Bookmark;
@@ -24,10 +26,14 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final TagRepository tagRepository;
+    private final UserRepository userRepository;
 
-    public BookmarkServiceImpl(BookmarkRepository bookmarkRepository, TagRepository tagRepository) {
+    public BookmarkServiceImpl(BookmarkRepository bookmarkRepository,
+                               TagRepository tagRepository,
+                               UserRepository userRepository) {
         this.bookmarkRepository = bookmarkRepository;
         this.tagRepository = tagRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -37,7 +43,13 @@ public class BookmarkServiceImpl implements BookmarkService {
         long start = System.currentTimeMillis();
         logger.info("START createBookmark | title={} | url={}", dto.getTitle(), dto.getUrl());
 
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         Bookmark bookmark = BookmarkMapper.toEntity(dto);
+        bookmark.setUser(user); // 🔥 FIX
 
         if (dto.getTags() != null && !dto.getTags().isEmpty()) {
             List<String> tagNames = dto.getTags().stream()
