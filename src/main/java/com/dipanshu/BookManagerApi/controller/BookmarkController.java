@@ -18,7 +18,10 @@ public class BookmarkController {
     public BookmarkController(BookmarkServiceImpl bookmarkService) {
         this.bookmarkService = bookmarkService;
     }
-
+    @GetMapping("/health")
+    public String health(){
+        return "healthy";
+    }
     @PostMapping
     public BookmarkResponseDTO createBookmark(
             @Valid @RequestBody BookmarkRequestDTO dto) {

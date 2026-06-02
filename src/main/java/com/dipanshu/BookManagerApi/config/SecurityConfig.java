@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/bookmarks/health").permitAll()
                         .requestMatchers("/bookmarks/**").hasRole("USER")
                         .anyRequest().authenticated()
                 )
