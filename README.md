@@ -1,170 +1,156 @@
-# 📚 BookManagerApi
+# BookManagerApi
 
-![Spring Boot](https://img.shields.io/badge/SpringBoot-3.x-brightgreen)
-![Java](https://img.shields.io/badge/Java-17+-orange)
-![JWT](https://img.shields.io/badge/Auth-JWT-blue)
-![License](https://img.shields.io/badge/License-MIT-lightgrey)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=flat-square&logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square)
 
-A production-grade **Bookmark Management REST API** built with Spring Boot.
-This API allows users to securely manage bookmarks with advanced features like tagging, favorites, search, and visit tracking.
+A production-grade **Bookmark Management REST API** built with Spring Boot — featuring JWT authentication, tagging, favorites, full-text search, visit tracking, and soft deletes.
 
----
-
-## 📑 Table of Contents
-
-* [🚀 Features](#-features)
-* [🛠 Tech Stack](#-tech-stack)
-* [📂 Project Structure](#-project-structure)
-* [🔐 Authentication (JWT)](#-authentication-jwt)
-* [📡 API Endpoints](#-api-endpoints)
-* [📥 Sample Requests & Responses](#-sample-requests--responses)
-* [⚙️ Getting Started](#️-getting-started)
-* [🗃️ Configuration](#️-configuration)
-* [🧹 Soft Delete Behavior](#-soft-delete-behavior)
-* [🤝 Contributing](#-contributing)
-* [📜 License](#-license)
+🌐 **[Live API](https://apibookmark.vercel.app/)** · 🖥 **[Frontend App](https://github.com/dipanshubatra/BookmarkApifrontend)** · 📦 **[Backend Repo](https://github.com/dipanshubatra/BookManagerApi)**
 
 ---
 
-## 🚀 Features
+## Table of Contents
 
-* 🔐 JWT Authentication (Register/Login)
-* 📌 Full CRUD for Bookmarks
-* 🗑 Soft Delete using Hibernate
-* 📄 Pagination & Sorting
-* 🔍 Full-text Search (title + description)
-* 🏷 Tag-based Filtering (Many-to-Many)
-* ⭐ Toggle Favorite Bookmarks
-* 📊 Visit Tracking (count + last visited)
-* ⚠️ Global Exception Handling
-* 📦 DTO-based Architecture
-* 👤 Role-based Access (ROLE_USER)
-
----
-
-## 🛠 Tech Stack
-
-* Java 17+
-* Spring Boot
-* Spring Security (JWT)
-* Spring Data JPA + Hibernate
-* PostgreSQL (or any JPA DB)
-* Lombok
-* Jakarta Validation
-* JJWT (io.jsonwebtoken)
-* Maven
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Authentication](#authentication)
+- [API Reference](#api-reference)
+- [Sample Requests & Responses](#sample-requests--responses)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Soft Delete Behavior](#soft-delete-behavior)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## 📂 Project Structure
+## Features
+
+| Feature | Details |
+|---|---|
+| 🔐 JWT Authentication | Secure register & login flow |
+| 📌 Full CRUD | Create, read, update, and delete bookmarks |
+| 🗑 Soft Delete | Records marked deleted, never permanently removed |
+| 📄 Pagination & Sorting | Efficient list retrieval at scale |
+| 🔍 Full-text Search | Search across title and description |
+| 🏷 Tag Filtering | Many-to-many tag relationships |
+| ⭐ Favorites | Toggle bookmarks as favorites |
+| 📊 Visit Tracking | Track visit count and last visited timestamp |
+| ⚠️ Global Exception Handling | Consistent, structured error responses |
+| 📦 DTO Architecture | Clean separation of API and domain layers |
+
+---
+
+## Tech Stack
+
+- **Language:** Java 17+
+- **Framework:** Spring Boot, Spring Security, Spring Data JPA
+- **Database:** PostgreSQL (compatible with any JPA-supported DB)
+- **Auth:** JWT via JJWT (`io.jsonwebtoken`)
+- **ORM:** Hibernate with soft delete support
+- **Utilities:** Lombok, Jakarta Validation
+- **Build:** Maven
+
+---
+
+## Project Structure
 
 ```
 com.dipanshu.BookManagerApi
-├── config/         
-├── controller/     
-├── dto/            
-├── entity/         
-├── exception/      
-├── mapper/         
-├── repository/     
-├── security/       
+├── config/          # Security & app configuration
+├── controller/      # REST controllers
+├── dto/             # Request & response DTOs
+├── entity/          # JPA entities
+├── exception/       # Global exception handling
+├── mapper/          # Entity ↔ DTO mappers
+├── repository/      # Spring Data repositories
+└── security/        # JWT filter & utilities
 ```
 
 ---
 
-## 🔐 Authentication (JWT)
+## Authentication
 
-* Users authenticate via `/auth/login`
-* Server generates a **JWT token**
-* Token must be sent in headers:
+This API uses **JWT (JSON Web Token)** for stateless authentication.
+
+1. Register or log in via the `/auth` endpoints to receive a token.
+2. Include the token in all subsequent requests:
 
 ```
 Authorization: Bearer <your-token>
 ```
 
-* Token is validated using a custom JWT filter
-* Role-based access enforced via Spring Security
+Token validation is handled by a custom Spring Security filter. All bookmark endpoints require a valid token.
 
 ---
 
-## 📡 API Endpoints
+## API Reference
 
-### 🔑 Auth APIs
+### Auth
 
-| Method | Endpoint       | Description     |
-| ------ | -------------- | --------------- |
-| POST   | /auth/register | Register user   |
-| POST   | /auth/login    | Login & get JWT |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth/register` | Register a new user |
+| `POST` | `/auth/login` | Log in and receive a JWT |
 
----
+### Bookmarks *(JWT required)*
 
-### 📚 Bookmark APIs (Require JWT)
-
-| Method | Endpoint                  | Description          |
-| ------ | ------------------------- | -------------------- |
-| POST   | /bookmarks                | Create bookmark      |
-| GET    | /bookmarks                | Get all (pagination) |
-| GET    | /bookmarks/{id}           | Get by ID            |
-| PUT    | /bookmarks/{id}           | Update               |
-| DELETE | /bookmarks/{id}           | Soft delete          |
-| GET    | /bookmarks/search         | Search               |
-| GET    | /bookmarks/tags/{tagName} | Filter by tag        |
-| PATCH  | /bookmarks/{id}/favorite  | Toggle favorite      |
-| POST   | /bookmarks/{id}/visit     | Record visit         |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/bookmarks` | Create a bookmark |
+| `GET` | `/bookmarks` | List all bookmarks (paginated) |
+| `GET` | `/bookmarks/{id}` | Get a bookmark by ID |
+| `PUT` | `/bookmarks/{id}` | Update a bookmark |
+| `DELETE` | `/bookmarks/{id}` | Soft delete a bookmark |
+| `GET` | `/bookmarks/search` | Full-text search |
+| `GET` | `/bookmarks/tags/{tagName}` | Filter by tag |
+| `PATCH` | `/bookmarks/{id}/favorite` | Toggle favorite status |
+| `POST` | `/bookmarks/{id}/visit` | Record a visit |
 
 ---
 
-## 📥 Sample Requests & Responses
+## Sample Requests & Responses
 
-### 🧑 Register
-
-**Request**
+### Register
 
 ```json
+// POST /auth/register
 {
   "username": "dipanshu",
   "password": "password123"
 }
-```
 
-**Response**
-
-```json
+// Response 200 OK
 {
-  "token": "jwt-token",
+  "token": "<jwt-token>",
   "type": "Bearer"
 }
 ```
 
----
-
-### 🔐 Login
-
-**Request**
+### Login
 
 ```json
+// POST /auth/login
 {
   "username": "dipanshu",
   "password": "password123"
 }
-```
 
-**Response**
-
-```json
+// Response 200 OK
 {
-  "token": "jwt-token",
+  "token": "<jwt-token>",
   "type": "Bearer"
 }
 ```
 
----
-
-### 📌 Create Bookmark
-
-**Request**
+### Create Bookmark
 
 ```json
+// POST /bookmarks
 {
   "title": "Google",
   "url": "https://google.com",
@@ -173,17 +159,13 @@ Authorization: Bearer <your-token>
 }
 ```
 
----
-
-### 🔍 Search Bookmark
+### Search Bookmarks
 
 ```
 GET /bookmarks/search?query=google&page=0&size=10
 ```
 
----
-
-### ❌ Error Response
+### Error Response
 
 ```json
 {
@@ -196,18 +178,24 @@ GET /bookmarks/search?query=google&page=0&size=10
 
 ---
 
-## ⚙️ Getting Started
+## Getting Started
 
-### 1️⃣ Clone Repository
+### Prerequisites
+
+- Java 17+
+- Maven
+- PostgreSQL
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/dipanshubatra/BookManagerApi.git
 cd BookManagerApi
 ```
 
-### 2️⃣ Configure Database
+### 2. Configure the Database
 
-Update `application.properties`:
+Update `src/main/resources/application.properties`:
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/bookmanager
@@ -215,58 +203,53 @@ spring.datasource.username=your_username
 spring.datasource.password=your_password
 ```
 
-### 3️⃣ Run Application
+### 3. Run the Application
 
 ```bash
 mvn spring-boot:run
 ```
 
----
-
-## 🗃️ Configuration
-
-```properties
-jwt.secret=your-secret-key
-jwt.expiration=3600000
-
-spring.datasource.url=...
-spring.datasource.username=...
-spring.datasource.password=...
-
-spring.jpa.hibernate.ddl-auto=update
-```
+The API will be available at `http://localhost:8080`.
 
 ---
 
-## 🧹 Soft Delete Behavior
+## Configuration
 
-* Bookmarks are **not permanently deleted**
-* Marked as deleted using Hibernate
-* Automatically excluded from queries
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
-1. Fork the repo
-2. Create a feature branch
-3. Commit changes
-4. Open a Pull Request
+| Property | Description |
+|----------|-------------|
+| `jwt.secret` | Secret key for signing JWT tokens |
+| `jwt.expiration` | Token expiry in milliseconds (e.g. `3600000` = 1 hour) |
+| `spring.datasource.url` | JDBC connection URL |
+| `spring.datasource.username` | Database username |
+| `spring.datasource.password` | Database password |
+| `spring.jpa.hibernate.ddl-auto` | Schema strategy (`update` recommended for dev) |
 
 ---
 
-## 📜 License
+## Soft Delete Behavior
 
-This project is licensed under the MIT License.
-
----
-
-## 👨‍💻 Author
-
-**Dipanshu Batra**
+Bookmarks are never permanently removed from the database. Deletion sets a flag using Hibernate's soft delete support, and all queries automatically exclude soft-deleted records. This preserves data integrity while keeping the API clean for end users.
 
 ---
 
-> 🚀 Production-ready backend project demonstrating real-world Spring Boot architecture and best practices.
+## Contributing
+
+Contributions are welcome! To get started:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add my feature'`)
+4. Push to your branch (`git push origin feature/my-feature`)
+5. Open a Pull Request
+
+Please keep code style consistent and add relevant tests where applicable.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+Made with ☕ by **[Dipanshu Batra](https://github.com/dipanshubatra)**
